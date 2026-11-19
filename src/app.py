@@ -149,7 +149,7 @@ def api_analizar():
     i = seguidas = analizadas = pers_max = 0
     armado = True
     eventos = []
-    ultima = None
+    mejor, mejor_n = None, -1        # cuadro con más personas (se muestra si no hay evento)
     while i < fps * MAX_SEG_VIDEO:
         ok, frame = cap.read()
         if not ok:
@@ -158,7 +158,8 @@ def api_analizar():
             incumplen, n, anotada = analizar(frame)
             analizadas += 1
             pers_max = max(pers_max, n)
-            ultima = anotada
+            if n > mejor_n:
+                mejor, mejor_n = anotada.copy(), n
             if incumplen:
                 seguidas += 1
                 if seguidas >= MUESTRAS_ALERTA and armado:
@@ -177,9 +178,9 @@ def api_analizar():
                con_ubicacion=lat is not None)
     if eventos:
         out["imagen"] = eventos[0]["imagen"]
-    elif ultima is not None:
+    elif mejor is not None:
         tmp = CAPTURAS / f"app_ok_{int(time.time() * 1000)}.jpg"
-        cv2.imwrite(str(tmp), ultima)
+        cv2.imwrite(str(tmp), mejor)
         out["imagen"] = f"/capturas/{tmp.name}"
     return jsonify(out)
 
