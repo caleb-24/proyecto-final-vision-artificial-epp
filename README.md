@@ -100,12 +100,12 @@ con disco persistente en `/data` (variable `DATA_DIR`). Verifica los precios vig
 
 ### Despliegue gratuito en Hugging Face Spaces
 
-1. Crea una cuenta en huggingface.co y un token de escritura (Settings → Access Tokens → *Write*).
-2. *New Space* → SDK **Docker** → plan gratuito *CPU basic* → visibilidad a tu gusto. Deja el Space vacío.
+1. Crea una cuenta en huggingface.co, un token de escritura (Settings → Access Tokens → *Write*) y ejecuta `hf auth login`.
+2. El script crea el Space (SDK **Docker**, público, *CPU basic* gratuito) si no existe; también puedes crearlo tú en la web.
 3. En el Space: *Settings → Variables and secrets → New secret*: `EPP_CLAVE` = la contraseña (usuario `epp`).
-4. Desde este repositorio:
+4. Desde este repositorio, con el entorno activo (usa la sesión de `hf auth login`, no pide contraseña):
    ```bash
-   scripts/publicar_hf.sh TU_USUARIO NOMBRE_DEL_SPACE   # usuario HF y token como contraseña
+   scripts/publicar_hf.sh TU_USUARIO NOMBRE_DEL_SPACE
    ```
 5. Espera el *build* (varios minutos) y abre `https://tu_usuario-nombre_del_space.hf.space` (no la página de huggingface.co:
    dentro de ese marco el navegador bloquea cámara y GPS).
