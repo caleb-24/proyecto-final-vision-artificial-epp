@@ -123,6 +123,17 @@ Clases: 0 casco, 1 chaleco, 2 persona.
 #figure(image("/demo/captura_sistema_alerta.jpg", width: 6.2cm),
   caption: [Alerta activa: persona en rojo con «SIN CHALECO», zona azul, barra de estado y banner inferior.])
 
+= Interfaz web y despliegue
+Además del procesamiento de video (`sistema.py`), el sistema ofrece una *app web* (Flask, `src/app.py`) para que el personal en obra reporte con el celular:
+abre una página, toma una foto o graba un video, el navegador lee el *GPS* en ese momento y el servidor aplica el mismo modelo y la misma regla de asociación.
+Si alguien incumple, se guarda un evento con zona, hora, falta, confianza, captura y *latitud, longitud y precisión del GPS* en la tabla `eventos`.
+El *panel* (`/panel`) consulta la base de datos y muestra los eventos en un mapa, una tabla con enlace a la ubicación y el reporte de incumplimientos por zona y hora (reto extra).
+En una foto se evalúan todas las personas del encuadre y se asume que se toma dentro de la zona vigilada; en un video se analiza medio segundo sí y medio no, y se dispara tras 3 muestras seguidas con falta.
+
+*Despliegue.* El sistema corre fuera de Colab como *API* (`/api/analizar`, `/api/eventos`) empaquetada en un *contenedor Docker* (`Dockerfile`: PyTorch para CPU, gunicorn, modelo incluido).
+El acceso está protegido con usuario y contraseña, y puede abrirse desde cualquier red mediante un túnel HTTPS de Cloudflare, lo que permite usar cámara y GPS desde el celular.
+No lo desplegamos en un servicio de nube de pago; el mismo `Dockerfile` serviría para hacerlo. *Privacidad:* las capturas muestran personas y ubicaciones, por lo que su uso requiere autorización de la empresa.
+
 // ------------------------------------------------------------------ 6
 = Resultados
 *Detección en el conjunto de prueba (1 050 imágenes).*

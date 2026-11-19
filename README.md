@@ -85,32 +85,20 @@ cd src && python app.py --publico
 
 La URL cambia cada vez que se inicia. Como queda abierta a internet, la clave es obligatoria: no compartas la URL sin ella.
 
-### Despliegue en Render (URL fija, sin depender del PC)
+### Despliegue como API en contenedor Docker
 
-El repositorio incluye `Dockerfile`, `render.yaml` y `requirements-server.txt`.
+La app es una API Flask (`/api/analizar`, `/api/eventos`) con su panel (`/panel`) y se empaqueta en el `Dockerfile` de la raíz
+(PyTorch solo CPU, `gunicorn`, 1 worker). El modelo viaja dentro de la imagen y los datos se guardan en `/data`.
 
-1. Sube el repositorio a GitHub (con `models/best.pt`, ~6 MB).
-2. En render.com: *New → Blueprint* y elige el repositorio; lee `render.yaml`.
-3. Render genera la variable `EPP_CLAVE` (contraseña, usuario `epp`): cópiala desde *Environment*.
-4. Abre la URL `https://epp-detector-xxxx.onrender.com` en el celular (HTTPS real: cámara y GPS funcionan).
+```bash
+docker build -t epp-detector .
+docker run -p 8000:7860 -e EPP_CLAVE=TU_CLAVE -v epp-datos:/data epp-detector
+# abrir http://localhost:8000  (usuario epp)
+```
 
-Notas: el modelo corre en CPU (≈ 37 FPS de inferencia, suficiente para fotos y videos cortos). El plan gratuito (512 MB, sin disco, se duerme)
-no sirve para este servicio: PyTorch necesita más RAM y SQLite/capturas se perderían en cada reinicio; por eso `render.yaml` usa un plan de pago
-con disco persistente en `/data` (variable `DATA_DIR`). Verifica los precios vigentes antes de crear el servicio.
-
-### Despliegue gratuito en Hugging Face Spaces
-
-1. Crea una cuenta en huggingface.co, un token de escritura (Settings → Access Tokens → *Write*) y ejecuta `hf auth login`.
-2. El script crea el Space (SDK **Docker**, público, *CPU basic* gratuito) si no existe; también puedes crearlo tú en la web.
-3. En el Space: *Settings → Variables and secrets → New secret*: `EPP_CLAVE` = la contraseña (usuario `epp`).
-4. Desde este repositorio, con el entorno activo (usa la sesión de `hf auth login`, no pide contraseña):
-   ```bash
-   scripts/publicar_hf.sh TU_USUARIO NOMBRE_DEL_SPACE
-   ```
-5. Espera el *build* (varios minutos) y abre `https://tu_usuario-nombre_del_space.hf.space` (no la página de huggingface.co:
-   dentro de ese marco el navegador bloquea cámara y GPS).
-
-El disco del plan gratuito es temporal: los eventos se pierden si el Space se reinicia o se duerme.
+Para abrirla desde el celular fuera de tu red, combina cualquiera de las dos formas con el túnel de la sección anterior
+(`python src/app.py --publico`). El mismo `Dockerfile` sirve para desplegar en un servicio de contenedores en la nube
+(Cloud Run, Render, Azure…) si más adelante se activa la facturación; no está desplegado en ninguno.
 
 ## Datos y entrenamiento
 

@@ -8,9 +8,9 @@ RUN pip install --no-cache-dir -r requirements-server.txt
 COPY src ./src
 COPY db ./db
 COPY models ./models
-# /data escribible por cualquier usuario (Hugging Face ejecuta como uid 1000; Render monta aquí su disco)
+# /data escribible por cualquier usuario; aquí se guardan la base de datos y las capturas
 RUN mkdir -p /data && chmod 777 /data
-# PORT=7860 por defecto (Hugging Face); Render lo sobrescribe con su propio puerto
+# puerto por defecto 7860; los servicios en la nube lo sobrescriben con $PORT
 ENV DATA_DIR=/data PYTHONUNBUFFERED=1 PORT=7860 YOLO_CONFIG_DIR=/tmp/ultralytics
 WORKDIR /app/src
 # El puerto llega en $PORT. 1 worker: el modelo ocupa memoria; 4 hilos para atender varias subidas.
