@@ -98,6 +98,20 @@ Notas: el modelo corre en CPU (≈ 37 FPS de inferencia, suficiente para fotos y
 no sirve para este servicio: PyTorch necesita más RAM y SQLite/capturas se perderían en cada reinicio; por eso `render.yaml` usa un plan de pago
 con disco persistente en `/data` (variable `DATA_DIR`). Verifica los precios vigentes antes de crear el servicio.
 
+### Despliegue gratuito en Hugging Face Spaces
+
+1. Crea una cuenta en huggingface.co y un token de escritura (Settings → Access Tokens → *Write*).
+2. *New Space* → SDK **Docker** → plan gratuito *CPU basic* → visibilidad a tu gusto. Deja el Space vacío.
+3. En el Space: *Settings → Variables and secrets → New secret*: `EPP_CLAVE` = la contraseña (usuario `epp`).
+4. Desde este repositorio:
+   ```bash
+   scripts/publicar_hf.sh TU_USUARIO NOMBRE_DEL_SPACE   # usuario HF y token como contraseña
+   ```
+5. Espera el *build* (varios minutos) y abre `https://tu_usuario-nombre_del_space.hf.space` (no la página de huggingface.co:
+   dentro de ese marco el navegador bloquea cámara y GPS).
+
+El disco del plan gratuito es temporal: los eventos se pierden si el Space se reinicia o se duerme.
+
 ## Datos y entrenamiento
 
 - 10 500 imágenes con 48 597 cajas (casco 18 528, chaleco 14 516, persona 15 553). División 70/20/10:

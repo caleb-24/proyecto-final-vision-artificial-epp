@@ -8,7 +8,10 @@ RUN pip install --no-cache-dir -r requirements-server.txt
 COPY src ./src
 COPY db ./db
 COPY models ./models
-ENV DATA_DIR=/data PYTHONUNBUFFERED=1
+# /data escribible por cualquier usuario (Hugging Face ejecuta como uid 1000; Render monta aquí su disco)
+RUN mkdir -p /data && chmod 777 /data
+# PORT=7860 por defecto (Hugging Face); Render lo sobrescribe con su propio puerto
+ENV DATA_DIR=/data PYTHONUNBUFFERED=1 PORT=7860 YOLO_CONFIG_DIR=/tmp/ultralytics
 WORKDIR /app/src
-# Render entrega el puerto en $PORT. 1 worker: el modelo ocupa memoria; 4 hilos para atender varias subidas.
+# El puerto llega en $PORT. 1 worker: el modelo ocupa memoria; 4 hilos para atender varias subidas.
 CMD gunicorn app:app --bind 0.0.0.0:${PORT:-8000} --workers 1 --threads 4 --timeout 180
