@@ -85,7 +85,8 @@ async function enviar(archivo) {
       `<span class="badge" style="background:${color}">${titulo}</span>` +
       `<p>${j.personas} persona(s) detectada(s)` + (j.tipo === "video" ? ` · ${j.muestras} cuadros analizados` : "") +
       (alerta ? ` · ${j.eventos.length} evento(s) guardado(s)` : "") + `</p>` +
-      (sinPersonas ? '<p class="mut">Acércate o mejora la luz. Si subes un video que ya trae recuadros dibujados, el modelo puede no reconocer a las personas: usa el original.</p>' : "") +
+      (sinPersonas && (j.cascos + j.chalecos) > 0 ? `<p class="mut">Sí se detectaron ${j.cascos} casco(s) y ${j.chalecos} chaleco(s), pero ninguna persona, así que no se puede saber a quién pertenece cada equipo. Suele pasar cuando las personas están muy juntas o tapadas: toma la foto un poco más lejos o de a pocas personas.</p>` : "") +
+      (sinPersonas && (j.cascos + j.chalecos) === 0 ? '<p class="mut">Acércate o mejora la luz. Si subes un video que ya trae recuadros dibujados, el modelo puede no reconocer a las personas: usa el original.</p>' : "") +
       (j.con_ubicacion ? "" : '<p class="mal">Guardado sin ubicación.</p>') +
       `<img src="${j.imagen}" alt="Resultado">`;
   } catch (e) { r.innerHTML = '<span class="mal">Error: ' + e.message + '</span>'; }

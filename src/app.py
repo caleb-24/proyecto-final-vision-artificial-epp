@@ -58,7 +58,7 @@ def pedir_clave():
 
 
 def analizar(frame):
-    """Detecta y evalúa a cada persona. Devuelve (lista de incumplimientos, personas totales, imagen anotada)."""
+    """Detecta y evalúa a cada persona. Devuelve (incumplimientos, personas, imagen anotada, (cascos, chalecos))."""
     res = modelo(frame, conf=CONF, device=DEV, verbose=False)[0]
     cascos, chalecos, personas = separar(res)
     esc = max(frame.shape[:2]) / 960
@@ -87,7 +87,7 @@ def analizar(frame):
         rotular(x1, y1 - 2, f"Persona: {txt} {pc:.0%}", color)
         if fc or fch:
             incumplen.append((fc, fch, float(pc)))
-    return incumplen, len(personas), frame
+    return incumplen, len(personas), frame, (len(cascos), len(chalecos))
 
 
 def guardar_evento(frame, incumplen, zona, lat, lon, prec, origen):
@@ -126,8 +126,8 @@ def api_analizar():
         frame = cv2.imdecode(np.frombuffer(datos, np.uint8), cv2.IMREAD_COLOR)
         if frame is None:
             return jsonify(error="No pude leer la imagen"), 400
-        incumplen, n, anotada = analizar(frame)
-        out = dict(tipo="foto", personas=n, incumplimientos=len(incumplen), eventos=[])
+        incumplen, n, anotada, eq = analizar(frame)
+        out = dict(tipo="foto", personas=n, cascos=eq[0], chalecos=eq[1], incumplimientos=len(incumplen), eventos=[])
         if incumplen:
             eid, nombre, fc, fch = guardar_evento(anotada, incumplen, zona, lat, lon, prec, "app")
             out["eventos"].append(dict(id=eid, imagen=f"/capturas/{nombre}", falta_casco=fc, falta_chaleco=fch))
@@ -146,7 +146,7 @@ def api_analizar():
     cap = cv2.VideoCapture(ruta_tmp)
     fps = cap.get(cv2.CAP_PROP_FPS) or 25
     paso = max(1, int(fps / MUESTRAS_POR_SEG))
-    i = seguidas = analizadas = pers_max = 0
+    i = seguidas = analizadas = pers_max = cascos_max = chalecos_max = 0
     armado = True
     eventos = []
     mejor, mejor_n = None, -1        # cuadro con más personas (se muestra si no hay evento)
@@ -155,8 +155,9 @@ def api_analizar():
         if not ok:
             break
         if i % paso == 0:
-            incumplen, n, anotada = analizar(frame)
+            incumplen, n, anotada, eq = analizar(frame)
             analizadas += 1
+            cascos_max, chalecos_max = max(cascos_max, eq[0]), max(chalecos_max, eq[1])
             pers_max = max(pers_max, n)
             if n > mejor_n:
                 mejor, mejor_n = anotada.copy(), n
@@ -174,7 +175,7 @@ def api_analizar():
     Path(ruta_tmp).unlink(missing_ok=True)
     if analizadas == 0:
         return jsonify(error="No pude leer el video"), 400
-    out = dict(tipo="video", muestras=analizadas, personas=pers_max, incumplimientos=len(eventos), eventos=eventos,
+    out = dict(tipo="video", muestras=analizadas, personas=pers_max, cascos=cascos_max, chalecos=chalecos_max, incumplimientos=len(eventos), eventos=eventos,
                con_ubicacion=lat is not None)
     if eventos:
         out["imagen"] = eventos[0]["imagen"]
