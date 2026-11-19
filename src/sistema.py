@@ -9,7 +9,7 @@ import numpy as np
 from ultralytics import YOLO
 
 import db
-from detector import faltas_persona, separar
+from detector import equipo_con_conf, faltas_persona, separar
 
 RAIZ = Path(__file__).resolve().parents[1]
 ap = argparse.ArgumentParser()
@@ -79,14 +79,14 @@ grosor = max(2, int(2 * esc))
 ZONA_NOMBRE = "Zona 1"
 MARGEN_SUP = int(50 * esc)   # alto de la barra superior
 
-def etiqueta(img, texto, x, y, color, tam=0.6):
+def etiqueta(img, texto, x, y, color, tam=0.6, txt=(255, 255, 255)):
     """Texto con fondo de color, dentro de la imagen."""
     t = tam * esc
     (w, h), base = cv2.getTextSize(texto, FUENTE_TXT, t, max(1, grosor - 1))
     x = int(max(0, min(x, img.shape[1] - w - 8)))
     y = int(max(h + 8 + MARGEN_SUP, y))
     cv2.rectangle(img, (x, y - h - 8), (x + w + 8, y + base - 2), color, -1)
-    cv2.putText(img, texto, (x + 4, y - 4), FUENTE_TXT, t, (255, 255, 255), max(1, grosor - 1), cv2.LINE_AA)
+    cv2.putText(img, texto, (x + 4, y - 4), FUENTE_TXT, t, txt, max(1, grosor - 1), cv2.LINE_AA)
 
 cuadro = 0
 contador = 0
@@ -110,11 +110,14 @@ while True:
     zx, zy = zona.min(axis=0)
     etiqueta(frame, "ZONA RESTRINGIDA", zx + 4, zy + MARGEN_SUP + int(24 * esc), AZUL, 0.5)
 
-    # equipo detectado (cajas finas)
-    for b in cascos:
-        cv2.rectangle(frame, tuple(map(int, b[:2])), tuple(map(int, b[2:])), AMARILLO, 1, cv2.LINE_AA)
-    for b in chalecos:
-        cv2.rectangle(frame, tuple(map(int, b[:2])), tuple(map(int, b[2:])), NARANJA, 1, cv2.LINE_AA)
+    # equipo detectado: caja fina + etiqueta en su borde inferior
+    cascos_c, chalecos_c = equipo_con_conf(res)
+    for b, cf in cascos_c:
+        cv2.rectangle(frame, tuple(map(int, b[:2])), tuple(map(int, b[2:])), AMARILLO, grosor, cv2.LINE_AA)
+        etiqueta(frame, f"Casco {cf:.0%}", b[0], b[3] - 2, AMARILLO, 0.5, (0, 0, 0))
+    for b, cf in chalecos_c:
+        cv2.rectangle(frame, tuple(map(int, b[:2])), tuple(map(int, b[2:])), NARANJA, grosor, cv2.LINE_AA)
+        etiqueta(frame, f"Chaleco {cf:.0%}", b[0], b[3] - 2, NARANJA, 0.5, (0, 0, 0))
 
     conflicto = False
     fc_f = fch_f = False
@@ -136,7 +139,7 @@ while True:
         else:
             color, txt = VERDE, "EPP completo"
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, grosor + 1, cv2.LINE_AA)
-        etiqueta(frame, f"{txt} {pc:.0%}", x1, y1 - 2, color)
+        etiqueta(frame, f"Persona: {txt} {pc:.0%}", x1, y1 - 2, color)
 
     if conflicto:
         contador += 1

@@ -36,3 +36,12 @@ def separar(res):
     chalecos = [b for b, c in zip(cajas, clases) if c == JACKET]
     personas = [(b, cf) for b, c, cf in zip(cajas, clases, confs) if c == PERSON]
     return cascos, chalecos, personas
+
+
+def equipo_con_conf(res):
+    """Cascos y chalecos como listas de (caja, confianza), para dibujar su etiqueta."""
+    cajas = res.boxes.xyxy.cpu().numpy()
+    clases = res.boxes.cls.cpu().numpy().astype(int)
+    confs = res.boxes.conf.cpu().numpy()
+    return ([(b, float(c)) for b, k, c in zip(cajas, clases, confs) if k == HELMET],
+            [(b, float(c)) for b, k, c in zip(cajas, clases, confs) if k == JACKET])

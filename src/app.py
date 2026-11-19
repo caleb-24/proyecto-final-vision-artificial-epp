@@ -26,7 +26,7 @@ from flask import Flask, Response, jsonify, request, send_from_directory
 from ultralytics import YOLO
 
 import db
-from detector import faltas_persona, separar
+from detector import equipo_con_conf, faltas_persona, separar
 
 RAIZ = Path(__file__).resolve().parents[1]
 DATOS = Path(os.environ.get("DATA_DIR", RAIZ))   # en Render apunta al disco persistente (/data)
@@ -64,20 +64,27 @@ def analizar(frame):
     esc = max(frame.shape[:2]) / 960
     g = max(2, int(2 * esc))
     incumplen = []
-    for b in cascos:
-        cv2.rectangle(frame, tuple(map(int, b[:2])), tuple(map(int, b[2:])), (0, 220, 255), 1)
-    for b in chalecos:
-        cv2.rectangle(frame, tuple(map(int, b[:2])), tuple(map(int, b[2:])), (0, 140, 255), 1)
+    def rotular(x, y, texto, color, txt=(255, 255, 255), tam=0.6):
+        (w, h), base = cv2.getTextSize(texto, 0, tam * esc, max(1, g - 1))
+        x = int(max(0, min(x, frame.shape[1] - w - 8)))
+        y = int(max(h + 8, y))
+        cv2.rectangle(frame, (x, y - h - 8), (x + w + 8, y + base - 2), color, -1)
+        cv2.putText(frame, texto, (x + 4, y - 4), 0, tam * esc, txt, max(1, g - 1), cv2.LINE_AA)
+
+    cascos_c, chalecos_c = equipo_con_conf(res)
+    for b, cf in cascos_c:
+        cv2.rectangle(frame, tuple(map(int, b[:2])), tuple(map(int, b[2:])), (0, 220, 255), g)
+        rotular(b[0], b[3] - 2, f"Casco {cf:.0%}", (0, 220, 255), (0, 0, 0), 0.5)
+    for b, cf in chalecos_c:
+        cv2.rectangle(frame, tuple(map(int, b[:2])), tuple(map(int, b[2:])), (0, 140, 255), g)
+        rotular(b[0], b[3] - 2, f"Chaleco {cf:.0%}", (0, 140, 255), (0, 0, 0), 0.5)
     for p, pc in personas:
         fc, fch = faltas_persona(p, cascos, chalecos)
         color = ROJO if (fc or fch) else VERDE
         txt = "SIN " + " y ".join(n for n, f in (("CASCO", fc), ("CHALECO", fch)) if f) if (fc or fch) else "EPP completo"
         x1, y1, x2, y2 = map(int, p)
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, g + 1)
-        (w, h), base = cv2.getTextSize(f"{txt} {pc:.0%}", 0, 0.6 * esc, max(1, g - 1))
-        y = max(h + 8, y1)
-        cv2.rectangle(frame, (x1, y - h - 8), (x1 + w + 8, y + base - 2), color, -1)
-        cv2.putText(frame, f"{txt} {pc:.0%}", (x1 + 4, y - 4), 0, 0.6 * esc, (255, 255, 255), max(1, g - 1), cv2.LINE_AA)
+        rotular(x1, y1 - 2, f"Persona: {txt} {pc:.0%}", color)
         if fc or fch:
             incumplen.append((fc, fch, float(pc)))
     return incumplen, len(personas), frame
