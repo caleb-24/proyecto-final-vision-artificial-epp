@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+data/*
+!data/README.md
+eventos.db
+capturas/
+zona.json
+demo_anotada.mp4
+*.zip

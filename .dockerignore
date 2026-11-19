@@ -1,0 +1,11 @@
+.venv/
+data/
+demo/
+docs/
+resultados/
+scripts/
+models/*.pt.bak
+capturas/
+eventos.db
+__pycache__/
+*.mp4

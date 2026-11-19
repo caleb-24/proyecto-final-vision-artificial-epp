@@ -1,0 +1,8 @@
+# Ajusta `path` a la carpeta donde descargaste el dataset
+path: data/safety-Helmet-Reflective-Jacket
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 3
+names: ['Safety-Helmet', 'Reflective-Jacket', 'Person']

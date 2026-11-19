@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reporte EPP</title>
+<style>
+  :root { --bg:#f4f6f9; --card:#fff; --tx:#1c2430; --mut:#6b7684; --ac:#1f6feb; --ok:#1a9b4b; --mal:#d63b3b; --bd:#dde3ea; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#12161c; --card:#1b212a; --tx:#e8edf3; --mut:#93a0af; --bd:#2c3542; } }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px system-ui,sans-serif; background:var(--bg); color:var(--tx); }
+  main { max-width:560px; margin:0 auto; padding:16px; }
+  h1 { font-size:1.25rem; margin:4px 0 14px; }
+  .card { background:var(--card); border:1px solid var(--bd); border-radius:12px; padding:14px; margin-bottom:12px; }
+  label { display:block; font-size:.85rem; color:var(--mut); margin-bottom:4px; }
+  input[type=text] { width:100%; font-size:1rem; padding:10px; border:1px solid var(--bd); border-radius:8px; background:var(--bg); color:var(--tx); }
+  .btn { display:block; width:100%; text-align:center; padding:16px; border-radius:10px; background:var(--ac); color:#fff; font-weight:600; font-size:1.05rem; border:0; cursor:pointer; }
+  .btn.sec { background:transparent; color:var(--ac); border:1px solid var(--ac); margin-top:8px; }
+  input[type=file] { display:none; }
+  #gps { font-size:.9rem; margin-top:8px; }
+  .ok { color:var(--ok); } .mal { color:var(--mal); } .mut { color:var(--mut); }
+  #res img { width:100%; border-radius:8px; margin-top:10px; }
+  .badge { display:inline-block; padding:4px 10px; border-radius:99px; font-weight:600; color:#fff; }
+  a { color:var(--ac); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Reporte de EPP en obra</h1>
+  <div class="card">
+    <label for="zona">Zona o frente de obra</label>
+    <input id="zona" type="text" value="Zona 1" autocomplete="off">
+    <div id="gps" class="mut">Ubicación: pendiente…</div>
+  </div>
+  <div class="card">
+    <label class="btn" for="foto">📷 Tomar foto</label>
+    <input id="foto" type="file" accept="image/*" capture="environment">
+    <label class="btn sec" for="video">🎥 Grabar video (máx. 60 s)</label>
+    <input id="video" type="file" accept="video/*" capture="environment">
+    <label class="btn sec" for="galeria" style="margin-top:8px">🖼️ Elegir de la galería</label>
+    <input id="galeria" type="file" accept="image/*,video/*">
+  </div>
+  <div id="res" class="card" hidden></div>
+  <p class="mut"><a href="/panel">Ver panel de eventos →</a></p>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+let pos = null;
+try { $("zona").value = localStorage.getItem("zona") || "Zona 1"; } catch (e) {}
+
+function pedirUbicacion() {
+  return new Promise(res => {
+    if (!navigator.geolocation) { $("gps").innerHTML = '<span class="mal">Este navegador no ofrece ubicación</span>'; return res(null); }
+    navigator.geolocation.getCurrentPosition(p => {
+      pos = { lat: p.coords.latitude, lon: p.coords.longitude, prec: p.coords.accuracy };
+      $("gps").innerHTML = `<span class="ok">Ubicación lista</span>: ${pos.lat.toFixed(5)}, ${pos.lon.toFixed(5)} (±${Math.round(pos.prec)} m)`;
+      res(pos);
+    }, e => {
+      pos = null;
+      $("gps").innerHTML = '<span class="mal">Sin ubicación</span> (' + e.message + '). Activa el GPS y permite el acceso; ' +
+        (location.protocol === "https:" || location.hostname === "localhost" ? "" : "recuerda que necesita HTTPS. ") + 'El evento se guardará sin coordenadas.';
+      res(null);
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+  });
+}
+pedirUbicacion();
+
+async function enviar(archivo) {
+  if (!archivo) return;
+  try { localStorage.setItem("zona", $("zona").value); } catch (e) {}
+  const r = $("res"); r.hidden = false; r.innerHTML = '<span class="mut">Obteniendo ubicación y analizando…</span>';
+  const p = await pedirUbicacion();           // ubicación en el momento de la captura
+  const fd = new FormData();
+  fd.append("archivo", archivo); fd.append("zona", $("zona").value || "Zona 1");
+  if (p) { fd.append("lat", p.lat); fd.append("lon", p.lon); fd.append("precision", p.prec); }
+  try {
+    const resp = await fetch("/api/analizar", { method: "POST", body: fd });
+    const j = await resp.json();
+    if (!resp.ok) throw new Error(j.error || resp.status);
+    const alerta = j.incumplimientos > 0;
+    r.innerHTML =
+      `<span class="badge" style="background:${alerta ? "var(--mal)" : "var(--ok)"}">${alerta ? "ALERTA: falta EPP" : "EPP completo"}</span>` +
+      `<p>${j.personas} persona(s) detectada(s)` + (j.tipo === "video" ? ` · ${j.muestras} cuadros analizados` : "") +
+      (alerta ? ` · ${j.eventos.length} evento(s) guardado(s)` : "") + `</p>` +
+      (j.con_ubicacion ? "" : '<p class="mal">Guardado sin ubicación.</p>') +
+      `<img src="${j.imagen}" alt="Resultado">`;
+  } catch (e) { r.innerHTML = '<span class="mal">Error: ' + e.message + '</span>'; }
+}
+["foto", "video", "galeria"].forEach(id => $(id).addEventListener("change", ev => { enviar(ev.target.files[0]); ev.target.value = ""; }));
+</script>
+</body>
+</html>

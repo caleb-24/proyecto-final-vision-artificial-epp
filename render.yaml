@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: epp-detector
+    runtime: docker
+    plan: standard          # el modelo + torch necesitan RAM; 512 MB no alcanza. Verifica el precio vigente en render.com
+    healthCheckPath: /healthz
+    envVars:
+      - key: EPP_CLAVE
+        generateValue: true  # contraseña del sitio (usuario: epp); cópiala desde el panel de Render
+      - key: DATA_DIR
+        value: /data
+    disk:
+      name: datos
+      mountPath: /data       # SQLite y capturas persisten aquí (los discos requieren plan de pago)
+      sizeGB: 1
