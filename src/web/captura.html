@@ -78,10 +78,14 @@ async function enviar(archivo) {
     const j = await resp.json();
     if (!resp.ok) throw new Error(j.error || resp.status);
     const alerta = j.incumplimientos > 0;
+    const sinPersonas = j.personas === 0;
+    const color = alerta ? "var(--mal)" : sinPersonas ? "var(--mut)" : "var(--ok)";
+    const titulo = alerta ? "ALERTA: falta EPP" : sinPersonas ? "No se detectaron personas" : "EPP completo";
     r.innerHTML =
-      `<span class="badge" style="background:${alerta ? "var(--mal)" : "var(--ok)"}">${alerta ? "ALERTA: falta EPP" : "EPP completo"}</span>` +
+      `<span class="badge" style="background:${color}">${titulo}</span>` +
       `<p>${j.personas} persona(s) detectada(s)` + (j.tipo === "video" ? ` · ${j.muestras} cuadros analizados` : "") +
       (alerta ? ` · ${j.eventos.length} evento(s) guardado(s)` : "") + `</p>` +
+      (sinPersonas ? '<p class="mut">Acércate o mejora la luz. Si subes un video que ya trae recuadros dibujados, el modelo puede no reconocer a las personas: usa el original.</p>' : "") +
       (j.con_ubicacion ? "" : '<p class="mal">Guardado sin ubicación.</p>') +
       `<img src="${j.imagen}" alt="Resultado">`;
   } catch (e) { r.innerHTML = '<span class="mal">Error: ' + e.message + '</span>'; }
