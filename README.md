@@ -116,7 +116,7 @@ El disco del plan gratuito es temporal: los eventos se pierden si el Space se re
 
 - 10 500 imágenes con 48 597 cajas (casco 18 528, chaleco 14 516, persona 15 553). División 70/20/10:
   7 350 entrenamiento, 2 100 validación, 1 050 prueba.
-- Origen: **[COMPLETAR: dataset de Kaggle citado + fotos propias]**. Dataset: **[COMPLETAR enlace]**.
+- Origen: **[COMPLETAR: dataset de Kaggle citado + fotos propias]**. Dataset (10 500 imágenes, 586 MB): https://huggingface.co/buckets/CJ305/proyecto-final-vision-artificial-epp-storage
 - La clase *persona* se pre-llenó con YOLOv8n preentrenado en COCO (`scripts/prellenar.py`, conf 0.4).
 - Entrenamiento: YOLOv8n preentrenado, 60 épocas, imagen 640, lote 8, GPU (≈75 min).
 

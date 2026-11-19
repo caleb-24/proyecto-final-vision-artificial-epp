@@ -16,7 +16,7 @@
 #let indicador = "[número: p. ej. «detectar ≥ 90 % de las personas sin casco o chaleco en zona»; línea base: __ revisiones manuales/día; meta: __]"
 #let n_fotos_propias = "[N]"
 #let enlace_repo = "[enlace de GitHub]"
-#let enlace_dataset = "[enlace de Drive / Roboflow]"
+#let enlace_dataset = "https://huggingface.co/buckets/CJ305/proyecto-final-vision-artificial-epp-storage"
 #let enlace_video = "[enlace de YouTube / Drive]"
 #let cita_dataset = "[Autor]. «Safety Helmet Reflective Jacket». Kaggle. [URL, fecha de consulta]"
 
