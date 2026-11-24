@@ -3,63 +3,125 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f3d63">
 <title>Panel EPP</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-  :root { --bg:#f4f6f9; --card:#fff; --tx:#1c2430; --mut:#6b7684; --ac:#1f6feb; --mal:#d63b3b; --bd:#dde3ea; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#12161c; --card:#1b212a; --tx:#e8edf3; --mut:#93a0af; --bd:#2c3542; } }
+  :root { --bg:#eef2f7; --card:#fff; --tx:#16202c; --mut:#667487; --bd:#dbe3ec; --ac:#0f6fd1; --mal:#d23b3b; --warn:#c77d0a; --chip:#e8eef6; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0e131a; --card:#171e28; --tx:#e9eef5; --mut:#93a1b2; --bd:#283343; --chip:#212b39; --ac:#3b8ff0; } }
   * { box-sizing:border-box; }
-  body { margin:0; font:15px system-ui,sans-serif; background:var(--bg); color:var(--tx); }
-  main { max-width:1100px; margin:0 auto; padding:16px; }
-  h1 { font-size:1.3rem; } h2 { font-size:1.05rem; margin:0 0 8px; }
+  body { margin:0; font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--tx); }
+  header { background:linear-gradient(135deg,#0f3d63,#0f6fd1); color:#fff; padding:16px; }
+  header .in { max-width:1180px; margin:0 auto; display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+  header h1 { margin:0; font-size:1.2rem; } header small { opacity:.85; }
+  select, button.b { font:inherit; padding:8px 12px; border-radius:10px; border:0; background:rgba(255,255,255,.18); color:#fff; }
+  select option { color:#000; }
+  main { max-width:1180px; margin:0 auto; padding:14px; }
+  .kpi { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:12px; }
+  .k { background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:12px 14px; }
+  .k b { display:block; font-size:1.8rem; line-height:1.1; } .k span { color:var(--mut); font-size:.8rem; }
+  .k.mal b { color:var(--mal); } .k.warn b { color:var(--warn); }
   .grid { display:grid; gap:12px; grid-template-columns:1fr; } @media (min-width:900px) { .grid { grid-template-columns:3fr 2fr; } }
-  .card { background:var(--card); border:1px solid var(--bd); border-radius:12px; padding:14px; }
-  #mapa { height:380px; border-radius:8px; }
-  table { width:100%; border-collapse:collapse; font-size:.88rem; }
-  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--bd); }
-  th { color:var(--mut); font-weight:600; }
-  .wrap { overflow-x:auto; }
-  .kpi { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
-  .kpi div { background:var(--card); border:1px solid var(--bd); border-radius:12px; padding:10px 16px; }
-  .kpi b { display:block; font-size:1.5rem; }
-  img.mini { width:56px; border-radius:4px; cursor:pointer; }
-  .mut { color:var(--mut); } a { color:var(--ac); }
+  .card { background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:14px; margin-bottom:12px; }
+  h2 { font-size:1rem; margin:0 0 10px; }
+  #mapa { height:360px; border-radius:10px; }
+  table { width:100%; border-collapse:collapse; font-size:.86rem; }
+  th, td { text-align:left; padding:8px 8px; border-bottom:1px solid var(--bd); vertical-align:middle; }
+  th { color:var(--mut); font-weight:600; position:sticky; top:0; background:var(--card); }
+  .wrap { overflow:auto; max-height:520px; }
+  .pill { display:inline-block; padding:2px 9px; border-radius:99px; font-size:.75rem; font-weight:650; color:#fff; background:var(--mal); margin-right:3px; }
+  .pill.ch { background:var(--warn); }
+  img.mini { width:60px; height:44px; object-fit:cover; border-radius:6px; cursor:pointer; display:block; }
+  .mut { color:var(--mut); } a { color:var(--ac); text-decoration:none; }
+  .bars { display:flex; align-items:flex-end; gap:3px; height:130px; padding-top:6px; }
+  .bar { flex:1; background:var(--ac); border-radius:4px 4px 0 0; min-height:2px; position:relative; }
+  .bar span { position:absolute; top:-16px; left:0; right:0; text-align:center; font-size:.68rem; color:var(--mut); }
+  .axis { display:flex; gap:3px; font-size:.62rem; color:var(--mut); } .axis i { flex:1; text-align:center; font-style:normal; }
+  #zoom { position:fixed; inset:0; background:rgba(0,0,0,.88); display:none; align-items:center; justify-content:center; z-index:999; }
+  #zoom img { max-width:96%; max-height:96%; border-radius:8px; }
+  .vacio { text-align:center; padding:26px; color:var(--mut); }
 </style>
 </head>
 <body>
+<header><div class="in">
+  <div><h1>🦺 Panel de incumplimientos de EPP</h1><small id="act">Cargando…</small></div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <select id="fz"><option value="">Todas las zonas</option></select>
+    <a href="/" style="color:#fff">📷 Capturar</a>
+  </div>
+</div></header>
 <main>
-  <h1>Panel de incumplimientos de EPP</h1>
   <div class="kpi" id="kpi"></div>
   <div class="grid">
-    <div class="card"><h2>Mapa de eventos</h2><div id="mapa"></div><p class="mut" id="nota"></p></div>
-    <div class="card"><h2>Por zona y hora</h2><div class="wrap"><table id="rep"></table></div></div>
+    <div class="card"><h2>Mapa de eventos</h2><div id="mapa"></div><p class="mut" id="nota" style="margin:8px 0 0"></p></div>
+    <div>
+      <div class="card"><h2>Eventos por hora del día</h2><div class="bars" id="bars"></div><div class="axis" id="axis"></div></div>
+      <div class="card"><h2>Por zona y hora</h2><div class="wrap" style="max-height:220px"><table id="rep"></table></div></div>
+    </div>
   </div>
-  <div class="card" style="margin-top:12px"><h2>Eventos</h2><div class="wrap"><table id="tab"></table></div></div>
-  <p class="mut"><a href="/">← Capturar foto o video</a></p>
+  <div class="card"><h2>Eventos</h2><div class="wrap"><table id="tab"></table></div></div>
 </main>
+<div id="zoom"><img alt=""></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const $ = id => document.getElementById(id);
-const faltas = e => [e.falta_casco ? "casco" : "", e.falta_chaleco ? "chaleco" : ""].filter(Boolean).join(" y ");
-async function cargar() {
-  const { eventos, reporte } = await (await fetch("/api/eventos")).json();
-  const conGps = eventos.filter(e => e.latitud != null);
-  $("kpi").innerHTML = `<div><b>${eventos.length}</b>eventos</div><div><b>${eventos.filter(e => e.falta_casco).length}</b>sin casco</div>` +
-    `<div><b>${eventos.filter(e => e.falta_chaleco).length}</b>sin chaleco</div><div><b>${conGps.length}</b>con ubicación</div>`;
-  $("rep").innerHTML = "<tr><th>Zona</th><th>Hora</th><th>Eventos</th><th>Sin casco</th><th>Sin chaleco</th></tr>" +
-    reporte.map(r => `<tr><td>${r.zona}</td><td>${r.hora}:00</td><td>${r.eventos}</td><td>${r.sin_casco}</td><td>${r.sin_chaleco}</td></tr>`).join("");
+let mapa = null, capa = null, datos = { eventos: [], reporte: [] }, primera = true;
+const faltas = e => `${e.falta_casco ? '<span class="pill">sin casco</span>' : ""}${e.falta_chaleco ? '<span class="pill ch">sin chaleco</span>' : ""}`;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function pintar() {
+  const zona = $("fz").value;
+  const ev = datos.eventos.filter(e => !zona || e.zona === zona);
+  const hoy = new Date().toISOString().slice(0, 10);
+  const conGps = ev.filter(e => e.latitud != null);
+  $("kpi").innerHTML =
+    `<div class="k"><b>${ev.length}</b><span>eventos</span></div>` +
+    `<div class="k"><b>${ev.filter(e => e.momento.startsWith(hoy)).length}</b><span>hoy</span></div>` +
+    `<div class="k mal"><b>${ev.filter(e => e.falta_casco).length}</b><span>sin casco</span></div>` +
+    `<div class="k warn"><b>${ev.filter(e => e.falta_chaleco).length}</b><span>sin chaleco</span></div>` +
+    `<div class="k"><b>${conGps.length}</b><span>con ubicación</span></div>`;
+
+  // barras por hora
+  const horas = Array(24).fill(0); ev.forEach(e => horas[+e.momento.slice(11, 13)]++);
+  const mx = Math.max(1, ...horas);
+  $("bars").innerHTML = horas.map(n => `<div class="bar" style="height:${(n / mx) * 100}%" title="${n}">${n ? `<span>${n}</span>` : ""}</div>`).join("");
+  $("axis").innerHTML = horas.map((_, h) => `<i>${h % 3 === 0 ? h : ""}</i>`).join("");
+
+  const rep = datos.reporte.filter(r => !zona || r.zona === zona);
+  $("rep").innerHTML = "<tr><th>Zona</th><th>Hora</th><th>Eventos</th><th>Casco</th><th>Chaleco</th></tr>" +
+    (rep.map(r => `<tr><td>${esc(r.zona)}</td><td>${r.hora}:00</td><td>${r.eventos}</td><td>${r.sin_casco}</td><td>${r.sin_chaleco}</td></tr>`).join("") || '<tr><td colspan="5" class="vacio">Sin datos</td></tr>');
+
   $("tab").innerHTML = "<tr><th>#</th><th>Momento</th><th>Zona</th><th>Falta</th><th>Conf.</th><th>Ubicación</th><th>Origen</th><th>Foto</th></tr>" +
-    eventos.map(e => `<tr><td>${e.id}</td><td>${e.momento.replace("T", " ")}</td><td>${e.zona}</td><td>${faltas(e)}</td><td>${(e.confianza * 100).toFixed(0)}%</td>` +
+    (ev.map(e => `<tr><td>${e.id}</td><td>${esc(e.momento.replace("T", " "))}</td><td>${esc(e.zona)}</td><td>${faltas(e)}</td><td>${Math.round(e.confianza * 100)}%</td>` +
       `<td>${e.latitud != null ? `<a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${e.latitud},${e.longitud}">${e.latitud.toFixed(5)}, ${e.longitud.toFixed(5)}</a>` : '<span class="mut">—</span>'}</td>` +
-      `<td>${e.origen || "video"}</td><td><a target="_blank" href="${e.imagen}"><img class="mini" src="${e.imagen}"></a></td></tr>`).join("");
+      `<td>${esc(e.origen || "video")}</td><td><img class="mini" loading="lazy" src="${esc(e.imagen)}" data-z="${esc(e.imagen)}"></td></tr>`).join("") || '<tr><td colspan="8" class="vacio">Aún no hay eventos</td></tr>');
+
   if (typeof L === "undefined") { $("nota").textContent = "El mapa necesita internet (Leaflet y OpenStreetMap)."; return; }
-  const m = L.map("mapa").setView(conGps.length ? [conGps[0].latitud, conGps[0].longitud] : [11.54, -72.91], conGps.length ? 16 : 11);
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(m);
-  conGps.forEach(e => L.circleMarker([e.latitud, e.longitud], { radius: 9, color: "#d63b3b", fillOpacity: .7 }).addTo(m)
-    .bindPopup(`<b>#${e.id} · ${e.zona}</b><br>${e.momento.replace("T", " ")}<br>Falta: ${faltas(e)}<br><img src="${e.imagen}" width="160">`));
-  if (!conGps.length) $("nota").textContent = "Aún no hay eventos con ubicación.";
+  if (!mapa) {
+    mapa = L.map("mapa").setView([11.54, -72.91], 11);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(mapa);
+    capa = L.layerGroup().addTo(mapa);
+  }
+  capa.clearLayers();
+  conGps.forEach(e => L.circleMarker([e.latitud, e.longitud], { radius: 9, color: "#d23b3b", fillColor: "#d23b3b", fillOpacity: .7 }).addTo(capa)
+    .bindPopup(`<b>#${e.id} · ${esc(e.zona)}</b><br>${esc(e.momento.replace("T", " "))}<br>${faltas(e)}<br><img src="${esc(e.imagen)}" width="170">`));
+  if (conGps.length && primera) { mapa.fitBounds(L.latLngBounds(conGps.map(e => [e.latitud, e.longitud])).pad(0.3), { maxZoom: 17 }); primera = false; }
+  $("nota").textContent = conGps.length ? "" : "Aún no hay eventos con ubicación.";
 }
-cargar();
+
+async function cargar() {
+  try {
+    datos = await (await fetch("/api/eventos")).json();
+    const zonas = [...new Set(datos.eventos.map(e => e.zona))], sel = $("fz").value;
+    $("fz").innerHTML = '<option value="">Todas las zonas</option>' + zonas.map(z => `<option ${z === sel ? "selected" : ""}>${esc(z)}</option>`).join("");
+    pintar();
+    $("act").textContent = "Actualizado " + new Date().toLocaleTimeString() + " · se refresca cada 10 s";
+  } catch (e) { $("act").textContent = "Sin conexión con el servidor"; }
+}
+$("fz").onchange = pintar;
+document.addEventListener("click", ev => { const z = ev.target.dataset && ev.target.dataset.z; if (z) { $("zoom").firstElementChild.src = z; $("zoom").style.display = "flex"; } });
+$("zoom").onclick = () => $("zoom").style.display = "none";
+cargar(); setInterval(cargar, 10000);
 </script>
 </body>
 </html>

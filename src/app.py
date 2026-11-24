@@ -220,17 +220,26 @@ def panel():
 
 
 def iniciar_tunel(puerto):
-    """Abre un túnel de Cloudflare (sin cuenta) y devuelve su URL pública https."""
+    """Abre un túnel HTTPS público y devuelve (url, proceso).
+
+    Usa cloudflared si está instalado; si no, un túnel SSH inverso con localhost.run (no requiere instalar nada ni crear cuenta).
+    """
     exe = shutil.which("cloudflared") or str(Path.home() / ".local" / "bin" / "cloudflared")
-    if not Path(exe).exists():
-        raise SystemExit("No encuentro cloudflared. Instálalo (ver README, sección «Desde cualquier red»).")
-    proc = subprocess.Popen([exe, "tunnel", "--url", f"http://localhost:{puerto}", "--no-autoupdate"],
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    if Path(exe).exists():
+        cmd = [exe, "tunnel", "--url", f"http://localhost:{puerto}", "--no-autoupdate"]
+        patron = r"https://[a-z0-9-]+\.trycloudflare\.com"
+    elif shutil.which("ssh"):
+        cmd = ["ssh", "-T", "-o", "StrictHostKeyChecking=accept-new", "-o", "ServerAliveInterval=30",
+               "-o", "ExitOnForwardFailure=yes", "-R", f"80:localhost:{puerto}", "nokey@localhost.run"]
+        patron = r"https://(?!admin\.)(?:[a-z0-9-]+\.)+lhr\.life"
+    else:
+        raise SystemExit("No encuentro cloudflared ni ssh. Instala cloudflared (ver README).")
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     url = []
 
     def leer():
         for linea in proc.stdout:
-            m = re.search(r"https://[a-z0-9-]+\.trycloudflare\.com", linea)
+            m = re.search(patron, linea)
             if m and not url:
                 url.append(m.group(0))
     threading.Thread(target=leer, daemon=True).start()

@@ -21,6 +21,7 @@ video → YOLOv8n (persona, casco, chaleco) → asociación persona-equipo → �
 | `src/db.py` | conexión SQLite, inserción de eventos y consulta por zona y hora |
 | `src/sistema.py` | programa principal: video → detección → zona → alerta → base de datos |
 | `src/app.py` + `src/web/` | **app web**: captura foto/video desde el celular con ubicación GPS y panel con mapa |
+| `mobile/` | app móvil Expo (React Native) para capturar y consultar eventos |
 | `src/reporte.py` | reporte de incumplimientos por zona y por hora (reto extra) |
 | `db/schema.sql` | creación de la tabla `eventos` |
 | `models/best.pt` | pesos entrenados (YOLOv8n, 60 épocas) |
@@ -72,18 +73,36 @@ En una foto se evalúan todas las personas del encuadre (se asume que se toma de
 medio segundo sí y medio no, y se dispara tras 3 muestras seguidas con falta.
 **Privacidad:** las capturas muestran personas y ubicación; guárdalas solo con autorización de la empresa.
 
-### Desde cualquier red (sin Wi-Fi compartido)
+### Desde cualquier red (túnel público)
 
-`python app.py --publico` abre un túnel de Cloudflare y muestra una URL `https://xxxx.trycloudflare.com` válida desde
-cualquier red o datos móviles, con certificado HTTPS real (sin advertencias). Pide usuario `epp` y una clave aleatoria que se
-imprime en la terminal (o la tuya con `--clave`). El PC debe quedar encendido, con internet, ejecutando la app.
+`python app.py --publico --clave TU_CLAVE` abre un túnel HTTPS y muestra una URL pública, válida desde cualquier red o datos móviles,
+con certificado real (cámara y GPS del celular funcionan). Usa `cloudflared` si está instalado y, si no, un túnel SSH con
+[localhost.run](https://localhost.run) (no requiere instalar nada ni crear cuenta).
 
 ```bash
-sudo pacman -S cloudflared      # Arch; otros sistemas: https://github.com/cloudflare/cloudflared/releases
-cd src && python app.py --publico
+cd src
+python app.py --publico --clave TU_CLAVE      # imprime la URL (https://xxxx.lhr.life) y el usuario: epp
 ```
 
-La URL cambia cada vez que se inicia. Como queda abierta a internet, la clave es obligatoria: no compartas la URL sin ella.
+Todo el sitio y la API piden usuario `epp` y esa clave. La URL cambia cada vez que se inicia. El PC debe estar encendido, con internet y con la app corriendo.
+Como queda abierta a internet, usa una clave larga y no compartas la URL sin ella.
+
+## App móvil con Expo (`mobile/`)
+
+App de React Native (Expo SDK 58) con tres pestañas: **Capturar** (foto, video o galería + GPS), **Eventos** (lista con foto y ubicación)
+y **Ajustes** (dirección del servidor y clave). Envía todo a la misma API (`/api/analizar`, `/api/eventos`).
+
+```bash
+cd mobile
+npm install
+npx expo start --tunnel        # QR para abrirla en Expo Go desde cualquier red
+```
+
+1. Instala **Expo Go** en el celular (Play Store / App Store) y escanea el QR. Con `--tunnel` funciona aunque el celular no esté en la misma Wi-Fi.
+2. En la pestaña *Ajustes* pega la URL pública del servidor (la de `python app.py --publico`) y la clave, y toca *Probar conexión*.
+3. En *Capturar*, permite cámara y ubicación y toma una foto o un video.
+
+Nota: el reporte en video grabado con la cámara depende de Expo Go en cada teléfono; si no abre la cámara de video, usa *Galería*.
 
 ### Despliegue como API en contenedor Docker
 

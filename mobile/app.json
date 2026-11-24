@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Reporte EPP",
+    "slug": "reporte-epp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": { "supportsTablet": true },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0f3d63",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": { "favicon": "./assets/favicon.png" },
+    "plugins": [
+      ["expo-image-picker", {
+        "photosPermission": "La app necesita tus fotos y videos para enviarlos al detector de EPP.",
+        "cameraPermission": "La app necesita la cámara para fotografiar o grabar la zona de obra.",
+        "microphonePermission": false
+      }],
+      ["expo-location", {
+        "locationWhenInUsePermission": "La app guarda la ubicación donde ocurre cada evento de EPP."
+      }]
+    ]
+  }
+}
