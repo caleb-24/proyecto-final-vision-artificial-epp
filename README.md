@@ -6,7 +6,7 @@ Sistema que detecta personas, cascos y chalecos reflectivos en video, asocia el 
 y **alerta cuando alguien sin casco o sin chaleco permanece dentro de una zona marcada**. Cada alerta se
 guarda en una base de datos SQLite con la zona, la hora, la falta, la confianza y una captura.
 
-**Integrantes:** Caleb Reyes (servidor en Docker e integración con Expo) · Denison Cuello (interfaz en Expo Go) · Camilo Gómez (repositorio)  ·  **Cliente:** empresa de construcción civil
+**Integrantes:** Caleb Reyes (servidor en Docker e integración con Expo) · Denison Cuello (interfaz en Expo Go) · Camilo Gómez (repositorio)  ·  **Cliente:** R&H Suministros Asesorías y Consultorías SAS
 
 ## Cómo funciona
 

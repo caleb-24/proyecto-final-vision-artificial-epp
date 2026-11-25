@@ -9,7 +9,7 @@
   ("Denison Cuello", "interfaz de la app en Expo Go"),
   ("Camilo Gómez", "repositorio y control de versiones"),
 )
-#let empresa = "empresa de construcción civil (nombre no publicado)"
+#let empresa = "R&H Suministros Asesorías y Consultorías SAS"
 #let sector = "construcción civil"
 #let uso = "vigilancia de casco y chaleco en frentes de obra; cámara fija apuntando a la zona de trabajo y computador local con la app web y el panel"
 #let problema = "Las revisiones manuales no cubren todas las zonas de riesgo al mismo tiempo y dejan poca evidencia de cada incumplimiento"
