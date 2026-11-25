@@ -8,6 +8,21 @@ guarda en una base de datos SQLite con la zona, la hora, la falta, la confianza 
 
 **Integrantes:** Caleb Reyes (servidor en Docker e integración con Expo) · Denison Cuello (interfaz en Expo Go) · Camilo Gómez (repositorio)  ·  **Cliente:** R&H Suministros Asesorías y Consultorías SAS
 
+## Ficha rápida
+
+| Dato | Valor |
+|---|---|
+| Asignatura | Visión Artificial · Ingeniería de Sistemas · Universidad de La Guajira |
+| Docente | Eduardo Sierra Fragozo |
+| Entrega | Proyecto 3 · 24 de noviembre de 2026 |
+| Modelo | YOLOv8n, 60 épocas, 3 clases (casco, chaleco, persona) |
+| Resultado principal | mAP50 0.940; decisión «incumple» F1 0.914 |
+| Informe | [`docs/informe.pdf`](docs/informe.pdf) (9 páginas) |
+| Repositorio | https://github.com/caleb-24/proyecto-final-vision-artificial-epp |
+| Dataset publicado | https://huggingface.co/buckets/CJ305/proyecto-final-vision-artificial-epp-storage |
+| Video demo | https://drive.google.com/drive/u/1/folders/1jgoJFF7JHdzBCA3dNVkgTr-876-0_3-d (`prueba web.mp4` y `prueba movil.mp4`, ~2:34 c/u) |
+| Tecnologías | Python, Flask, OpenCV, Ultralytics YOLOv8, SQLite/Supabase, Docker, React Native (Expo SDK 58) |
+
 ## Cómo funciona
 
 ```
@@ -88,6 +103,24 @@ Para la demo conviene desactivar la confirmación por correo en Supabase → *Au
 Así `/api/registro` devuelve sesión de inmediato y no se consume el límite de correos del plan gratuito. Si está activa, el usuario debe
 confirmar el correo antes de poder entrar.
 
+### API REST
+
+| Método | Ruta | Autenticación | Qué hace |
+|---|---|---|---|
+| GET | `/` | no | Página de captura (foto/video + GPS) |
+| GET | `/panel` | no | Panel con mapa, KPIs y reporte por zona/hora |
+| GET | `/healthz` | no | Chequeo de salud: responde `ok` |
+| POST | `/api/registro` | no | Crea usuario (correo y contraseña) con Supabase Auth |
+| POST | `/api/login` | no | Devuelve `access_token` y correo |
+| GET | `/api/yo` | Bearer | Usuario actual |
+| POST | `/api/analizar` | Bearer | Sube foto/video (`multipart/form-data`, campo `archivo`), analiza y guarda el evento |
+| GET | `/api/eventos` | Bearer | Lista eventos (con `imagen`, latitud, longitud) y reporte agregado |
+| GET | `/capturas/<archivo>` | no | Imagen anotada guardada en `capturas/` |
+
+`/api/analizar` acepta además `zona`, `lat`, `lon` y `precision` como campos de formulario. Para foto devuelve
+`tipo`, `personas`, `cascos`, `chalecos`, `incumplimientos`, `eventos` e `imagen`; para video muestrea cada 0.5 s
+durante hasta 60 s y dispara la alerta tras 3 muestras seguidas con falta.
+
 ### Desde cualquier red (túnel público)
 
 `python app.py --publico` abre un túnel HTTPS y muestra una URL pública, válida desde cualquier red o datos móviles,
@@ -158,6 +191,24 @@ Si usas Docker, pasa el mismo archivo al contenedor:
 docker run -p 8000:7860 --env-file .env epp-detector
 ```
 
+## Esquema de datos
+
+Tabla `eventos` (`db/schema.sql`, espejo en `db/supabase.sql`):
+
+| Columna | Tipo | Contenido |
+|---|---|---|
+| `id` | INTEGER PK | Identificador autoincremental |
+| `momento` | TEXT | Fecha y hora ISO 8601 del evento |
+| `zona` | TEXT | Nombre de la zona vigilada |
+| `falta_casco`, `falta_chaleco` | INTEGER | 1 si faltaba cada equipo |
+| `confianza` | REAL | Confianza de la detección de la persona |
+| `ruta_captura` | TEXT | Imagen con las cajas dibujadas |
+| `latitud`, `longitud`, `precision_m` | REAL/INTEGER | GPS del celular (opcional) |
+| `origen` | TEXT | `video`, `webcam` o `app` |
+| `usuario` | TEXT | Correo de quien reportó el evento |
+
+El reporte `python src/reporte.py` agrupa incumplimientos por zona y por hora (reto extra del proyecto).
+
 ## Datos y entrenamiento
 
 - 10 500 imágenes con 48 597 cajas (casco 18 528, chaleco 14 516, persona 15 553). División 70/20/10:
@@ -182,9 +233,44 @@ Velocidad: ~137 FPS en GPU y ~37 FPS en CPU (solo inferencia). Detalles en `docs
 
 ```bash
 python scripts/analisis.py data/safety-Helmet-Reflective-Jacket
+# resultados en resultados/analisis/analisis.json
 ```
+
+| Experimento | Resultado |
+|---|---|
+| Filtro 3×3 a mano vs OpenCV | Diferencia 4·10⁻⁶ (suma de productos 48.0) |
+| Entrada sin normalizar (0–255) | F1 cae de 0.899 a 0.001 (83 644 detecciones falsas) |
+| Entrenamiento desde cero vs preentrenado | mAP50 0.805 (época 1) → 0.905 (10) → 0.950 (60) |
+| Regla de asociación antes/después | F1 0.905 → 0.914; acierto de casco 0.942 → 0.945 |
+| Barrido de confianza | Con 0.4, F1 0.895; con 0.6 sube la precisión a 0.953 pero el recall baja a 0.815 |
+| Distancia (tamaño de persona) | Recall 0.61 lejos, 0.80 medio, 0.90 cerca |
+| Iluminación | F1 global 0.900 original, 0.835 con brillo ×2 |
 
 ## Limitaciones
 
 Falla con personas de espaldas o con la cabeza fuera de cuadro, objetos parecidos a cascos (pañuelos, gorras),
 poca luz y personas lejanas. Las etiquetas de *persona* son automáticas (COCO) y se revisaron por muestra.
+El modelo no encuentra al ~14 % de las personas del conjunto de prueba (224 de 1 617) y en grupos pegados detecta 1 de 5.
+El dataset original tiene algunas imágenes volteadas 180°.
+
+## Solución de problemas
+
+| Síntoma | Causa y solución |
+|---|---|
+| «no tunnel» en el celular | La URL pública guardada quedó vieja. Vuelve a correr `python src/app.py --publico`, copia la URL nueva y pégala en *Ajustes* de la app. |
+| Cámara o GPS no funcionan | Requieren HTTPS (o `localhost`): usa `--https` en la misma Wi-Fi o `--publico` desde cualquier red. |
+| La imagen tarda en aparecer en Expo | El túnel público es lento; espera unos segundos o toca *Reintentar imagen*. La foto se reduce a 960 px antes de subir. |
+| El panel no muestra una foto | El panel solo lista **eventos** (cuando hay falta de casco o chaleco). Una foto con «EPP completo» no genera evento. |
+| `Fetch request has been canceled` | El servidor tardó más de 90 s. Revisa la URL en *Ajustes* y la conexión; vuelve a intentar. |
+| `docker: Cannot connect to the Docker daemon` | El daemon está apagado: `sudo systemctl start docker` (necesita contraseña del usuario). |
+| `Permission denied` al hacer `git push` | La cuenta activa de `gh` debe ser `caleb-24`: `gh auth switch --user caleb-24`. |
+| No entra un usuario recién creado | Confirma el correo o desactiva *Confirm email* en Supabase Auth. |
+
+## Enlaces
+
+- **Repositorio:** https://github.com/caleb-24/proyecto-final-vision-artificial-epp
+- **Informe PDF:** [`docs/informe.pdf`](docs/informe.pdf)
+- **Dataset en Kaggle:** https://www.kaggle.com/datasets/niravnaik/safety-helmet-and-reflective-jacket/data
+- **Dataset publicado:** https://huggingface.co/buckets/CJ305/proyecto-final-vision-artificial-epp-storage
+- **Videos demo:** https://drive.google.com/drive/u/1/folders/1jgoJFF7JHdzBCA3dNVkgTr-876-0_3-d
+- **YOLOv8 (Ultralytics):** https://github.com/ultralytics/ultralytics
