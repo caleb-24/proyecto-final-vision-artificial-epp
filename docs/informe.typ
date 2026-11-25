@@ -20,35 +20,66 @@
 #let cita_dataset = "Nirav Naik. «Safety Helmet and Reflective Jacket». Kaggle. https://www.kaggle.com/datasets/niravnaik/safety-helmet-and-reflective-jacket/data, consultado el 24 de noviembre de 2026."
 
 // ============================================================================
-#set document(title: "Proyecto final Visión Artificial – Detector de EPP en obra")
-#set page(paper: "a4", margin: (x: 2.1cm, y: 2.0cm), numbering: "1",
-  footer: context [#set text(8pt, fill: gray); Detector de EPP en obra · Visión Artificial · Universidad de La Guajira #h(1fr) #counter(page).display()])
-#set text(font: ("Inter", "DM Sans", "FreeSans"), size: 9.3pt, lang: "es")
-#set par(justify: true, leading: 0.62em)
+#let azul = rgb("#1f3a5f")
+#let acento = rgb("#2b7a9b")
+#let gris = rgb("#667487")
+#let linea = rgb("#d6e2ee")
+
+#set document(title: "Proyecto final Visión Artificial – Detector de EPP en obra",
+  author: "Caleb Reyes · Denison Cuello · Camilo Gómez")
+#set page(paper: "a4", margin: (x: 2.1cm, top: 2.1cm, bottom: 1.9cm), numbering: "1",
+  header: context [
+    #set text(8pt, fill: gris)
+    Detector de EPP en obra · Proyecto final Visión Artificial
+    #v(2pt)
+    #line(length: 100%, stroke: 0.6pt + linea)
+  ],
+  footer: context [
+    #line(length: 100%, stroke: 0.6pt + linea)
+    #v(3pt)
+    #set text(8pt, fill: gris)
+    Universidad de La Guajira #h(1fr) Página #counter(page).display()
+  ])
+#set text(font: ("Inter", "DM Sans", "FreeSans"), size: 9.4pt, lang: "es")
+#set par(justify: true, leading: 0.61em, spacing: 0.4em)
 #set heading(numbering: "1.")
-#show heading.where(level: 1): it => block(above: 1.1em, below: 0.6em, text(14pt, weight: "bold", fill: rgb("#1f3a5f"), it))
-#show heading.where(level: 2): it => block(above: 0.9em, below: 0.4em, text(11pt, weight: "bold", fill: rgb("#1f3a5f"), it))
-#show raw: set text(font: ("Inconsolata", "DejaVu Sans Mono"), size: 9pt)
-#show figure.caption: set text(8.5pt)
-#set table(stroke: 0.5pt + luma(180), inset: 5pt)
-#show table.cell.where(y: 0): set text(weight: "bold")
-#let tabla(..a) = block(breakable: false, table(fill: (_, y) => if y == 0 { rgb("#e8eef6") }, ..a))
+#show heading.where(level: 1): it => block(above: 0.95em, below: 0.55em, width: 100%)[
+  #text(14pt, weight: "bold", fill: azul, it)
+  #v(-3pt)
+  #line(length: 100%, stroke: 1.4pt + acento)
+]
+#show heading.where(level: 2): it => block(above: 0.9em, below: 0.45em)[
+  #text(11pt, weight: "bold", fill: azul, it)
+]
+#show raw: set text(font: ("Inconsolata", "DejaVu Sans Mono"), size: 8.8pt)
+#show figure.caption: set text(8.2pt, fill: gris, style: "italic")
+#set table(stroke: 0.4pt + linea, inset: (x: 6pt, y: 5pt))
+#show table.cell.where(y: 0): set text(weight: "bold", fill: white)
+#let tabla(..a) = block(breakable: false, width: 100%, table(
+  fill: (x, y) => if y == 0 { azul } else if calc.odd(y) { rgb("#f4f7fa") } else { white },
+  stroke: (x, y) => if y == 0 { 0pt } else { 0.4pt + linea },
+  ..a))
 
 // ------------------------------------------------------------------ portada
-#align(center)[
-  #v(0.5cm)
-  #text(9pt, fill: gray)[Visión Artificial · Ingeniería de Sistemas · Universidad de La Guajira · Docente: Eduardo Sierra Fragozo]
-  #v(0.3cm)
-  #text(21pt, weight: "bold", fill: rgb("#1f3a5f"))[Detector de elementos de protección personal en obra]
-  #v(0.1cm)
-  #text(12pt)[Proyecto final – Proyecto 3 · Casco y chaleco con alerta por zona]
-  #v(0.2cm)
-  #text(10pt)[#integrantes.map(i => i.at(0)).join(" · ")]
-  #v(0.1cm)
-  #text(9pt, fill: gray)[24 de noviembre de 2026]
+#block(width: 100%, fill: azul, inset: (x: 12pt, y: 9pt), radius: 2pt)[
+  #text(9.5pt, fill: white, weight: "bold")[UNIVERSIDAD DE LA GUAJIRA · INGENIERÍA DE SISTEMAS · VISIÓN ARTIFICIAL]
 ]
-#v(0.2cm)
-#block(fill: rgb("#eef3f9"), inset: 9pt, radius: 4pt, width: 100%)[
+#v(1.1cm)
+#align(center)[
+  #text(9.5pt, fill: acento)[PROYECTO FINAL · PROYECTO 3]
+  #v(0.35cm)
+  #text(21pt, weight: "bold", fill: azul)[Detector de elementos de protección personal en obra]
+  #v(0.3cm)
+  #line(length: 32%, stroke: 2pt + acento)
+  #v(0.4cm)
+  #text(12pt, fill: gris)[Casco y chaleco con alerta por zona]
+  #v(1.0cm)
+  #text(10.5pt, weight: "bold", fill: azul)[#integrantes.map(i => i.at(0)).join("  ·  ")]
+  #v(0.25cm)
+  #text(9.5pt, fill: gris)[Docente: Eduardo Sierra Fragozo · 24 de noviembre de 2026]
+]
+#v(0.6cm)
+#block(fill: rgb("#eef3f9"), inset: 12pt, radius: 4pt, width: 100%, stroke: 0.6pt + linea)[
   *Resumen.* Construimos un sistema que detecta personas, cascos y chalecos con YOLOv8n, asocia el equipo a cada persona y
   genera una alerta cuando alguien sin casco o sin chaleco permanece 15 cuadros seguidos dentro de un polígono marcado. Cada alerta
   se guarda en SQLite con zona, hora, falta, confianza y captura. En 1 050 imágenes de prueba el modelo logra mAP50 de 0.940
@@ -256,20 +287,20 @@ Un umbral alto reduce las falsas alarmas (más precisión) pero deja pasar incum
 // ------------------------------------------------------------------ 8
 = Casos de falla
 En las imágenes, los recuadros blancos finos son las etiquetas del dataset; los de color son las detecciones del modelo (conf ≥ 0.4).
-#let caso(img, titulo, texto) = grid(columns: (4.6cm, 1fr), gutter: 9pt, align: horizon,
-  image(img, width: 4.6cm), [*#titulo.* #texto])
+#let caso(img, titulo, texto) = grid(columns: (4.1cm, 1fr), gutter: 8pt, align: horizon,
+  image(img, width: 4.1cm), [*#titulo.* #texto])
 #caso("/docs/figuras/falla1_espaldas.jpg", "Caso 1 – persona de espaldas y cabeza fuera de cuadro",
   [Las dos personas aparecen sin cabeza (una de frente y otra de espaldas), pero el modelo detecta un «casco» (0.78 y 0.68) en el borde superior de la imagen. El chaleco sí se detecta bien (0.91 y 0.85). El sistema asume que hay casco y no alerta, aunque la falta es real. Causa: el modelo se apoya en el contexto (chaleco sobre torso) y «alucina» un casco donde se espera; el dataset tiene pocas vistas posteriores.])
-#v(4pt)
+#v(3pt)
 #caso("/docs/figuras/falla2_panuelo.jpg", "Caso 2 – pañuelo rojo confundido con un casco",
   [Una trabajadora lleva un pañuelo rojo en la cabeza y el modelo lo detecta como *casco* con 0.74. Un trabajador sin casco quedaría marcado como protegido. Causa: color vivo y forma redondeada similares a un casco; igual ocurre con gorras. Se mitigaría con ejemplos negativos de gorras y pañuelos.])
-#v(4pt)
+#v(3pt)
 #caso("/docs/figuras/falla3_noche.jpg", "Caso 3 – poca luz y personas pequeñas",
   [Escena nocturna con farolas: las personas son pequeñas y mal iluminadas, el equipo se detecta con confianza baja (casco 0.53, chaleco 0.71) y varias personas quedan con cajas poco precisas. Es el caso que anticipan las secciones B y E: tamaño aparente pequeño más poca luz. Mejoraría con una cámara con mejor sensor o iluminación y más ejemplos nocturnos.])
-#v(4pt)
+#v(3pt)
 #caso("/docs/figuras/falla4_invertida.jpg", "Caso 4 – imagen volteada",
   [Parte del dataset incluye imágenes giradas 180° (aquí la escena aparece de cabeza). El modelo aún detecta cascos y chalecos, pero la regla de asociación supone la cabeza en el tercio superior de la caja, que en estas imágenes queda abajo, y se marca una falta que no existe. Causa: la regla asume personas de pie y la cámara en posición normal. En producción no pasa, pero explica errores medidos en prueba y sugiere limpiar el dataset.])
-#v(4pt)
+#v(3pt)
 #caso("/docs/figuras/falla5_grupo.jpg", "Caso 5 – grupo de personas encimadas",
   [En el grupo las cajas de las personas se superponen, de modo que el casco o el chaleco de una puede caer dentro de la caja de la vecina; la regla del centro puede asignar equipo a quien no lo lleva. Causa: oclusión entre personas; se mejora con asociación por IoU y seguimiento por persona.])
 
