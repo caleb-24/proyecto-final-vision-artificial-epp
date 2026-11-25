@@ -5,20 +5,19 @@
 
 #let integrantes = (
   // (nombre, qué hizo)
-  ("[Nombre 1]", "[p. ej.: entrenamiento del modelo y análisis técnico]"),
-  ("[Nombre 2]", "[p. ej.: sistema.py, base de datos y repositorio]"),
-  ("[Nombre 3]", "[p. ej.: dataset, fotos propias, informe y video]"),
+  ("Caleb Reyes", "servidor en Docker y integración con la app Expo"),
+  ("Denison Cuello", "interfaz de la app en Expo Go"),
+  ("Camilo Gómez", "repositorio y control de versiones"),
 )
-#let empresa = "[Nombre de la empresa]"
-#let sector = "[Sector: construcción / seguridad industrial / …]"
-#let uso = "[quién usaría el sistema, dónde se instala la cámara]"
-#let problema = "[qué le cuesta hoy a la empresa no controlar el EPP: accidentes, multas, tiempo del inspector]"
-#let indicador = "[número: p. ej. «detectar ≥ 90 % de las personas sin casco o chaleco en zona»; línea base: __ revisiones manuales/día; meta: __]"
-#let n_fotos_propias = "[N]"
-#let enlace_repo = "[enlace de GitHub]"
+#let empresa = "empresa de construcción civil (nombre no publicado)"
+#let sector = "construcción civil"
+#let uso = "vigilancia de casco y chaleco en frentes de obra; cámara fija apuntando a la zona de trabajo y computador local con la app web y el panel"
+#let problema = "Las revisiones manuales no cubren todas las zonas de riesgo al mismo tiempo y dejan poca evidencia de cada incumplimiento"
+#let indicador = "Meta propuesta: detectar al menos 8 de cada 10 incumplimientos dentro de la zona marcada (recall ≥ 0.80), con línea base de revisión manual continua. En las 1 050 imágenes de prueba se obtuvo recall 0.89 y precisión 0.94."
+#let enlace_repo = "https://github.com/caleb-24/proyecto-final-vision-artificial-epp"
 #let enlace_dataset = "https://huggingface.co/buckets/CJ305/proyecto-final-vision-artificial-epp-storage"
-#let enlace_video = "[enlace de YouTube / Drive]"
-#let cita_dataset = "[Autor]. «Safety Helmet Reflective Jacket». Kaggle. [URL, fecha de consulta]"
+#let enlace_video = "https://drive.google.com/drive/u/1/folders/1jgoJFF7JHdzBCA3dNVkgTr-876-0_3-d"
+#let cita_dataset = "Nirav Naik. «Safety Helmet and Reflective Jacket». Kaggle. https://www.kaggle.com/datasets/niravnaik/safety-helmet-and-reflective-jacket/data, consultado el 24 de noviembre de 2026."
 
 // ============================================================================
 #set document(title: "Proyecto final Visión Artificial – Detector de EPP en obra")
@@ -62,18 +61,18 @@
 = Ficha del cliente
 #tabla(columns: (3.2cm, 1fr),
   [Concepto], [Descripción],
-  [Empresa], [#falta(empresa)],
-  [Sector], [#falta(sector)],
-  [Uso del sistema], [#falta(uso)],
-  [Quién lo opera], [#falta("persona encargada de seguridad / residente de obra")],
+  [Empresa], [#empresa],
+  [Sector], [#sector],
+  [Uso del sistema], [#uso],
+  [Quién lo opera], [persona encargada de seguridad / residente de obra],
 )
 #text(8.5pt, fill: gray)[Si la empresa es real, no se publican datos privados de ella ni de sus empleados sin autorización.]
 
 = Problema de negocio e indicador de éxito
-*Problema.* #falta(problema) Un inspector no puede mirar todas las zonas de riesgo todo el tiempo; el sistema vigila de forma
+*Problema.* #problema Un inspector no puede mirar todas las zonas de riesgo todo el tiempo; el sistema vigila de forma
 continua y deja evidencia (hora, zona y foto) de cada incumplimiento.
 
-*Indicador de éxito.* #falta(indicador)
+*Indicador de éxito.* #indicador
 
 *Requisitos del cliente.* (1) Alertar solo si la persona sin equipo está dentro de la zona marcada, para no molestar con falsas alarmas
 fuera de ella. (2) Guardar cada evento con evidencia consultable. (3) Funcionar con una cámara fija y un computador común.
@@ -83,7 +82,7 @@ reales y el 94 % de sus alertas son correctas (sección 6).
 
 // ------------------------------------------------------------------ 3
 = Datos
-*Origen.* Dataset público de Kaggle: #cita_dataset, más #falta(n_fotos_propias + " fotos propias") tomadas por el grupo.
+*Origen.* Dataset público de Kaggle: #cita_dataset. No se dispuso de fotos propias etiquetadas de la obra, por lo que el conjunto final proviene de ese dataset público (limitación declarada en la sección 8).
 El conjunto final tiene *10 500 imágenes* y *48 597 cajas*: casco 18 528, chaleco 14 516 y persona 15 553.
 *División 70/20/10:* 7 350 entrenamiento, 2 100 validación y 1 050 prueba (se movieron 525 imágenes de prueba a validación con `mover.py`, semilla 42).
 
@@ -131,8 +130,8 @@ El *panel* (`/panel`) consulta la base de datos y muestra los eventos en un mapa
 En una foto se evalúan todas las personas del encuadre y se asume que se toma dentro de la zona vigilada; en un video se analiza medio segundo sí y medio no, y se dispara tras 3 muestras seguidas con falta.
 
 *Despliegue.* El sistema corre fuera de Colab como *API* (`/api/analizar`, `/api/eventos`) empaquetada en un *contenedor Docker* (`Dockerfile`: PyTorch para CPU, gunicorn, modelo incluido).
-El acceso está protegido con usuario y contraseña, y puede abrirse desde cualquier red mediante un túnel HTTPS de Cloudflare, lo que permite usar cámara y GPS desde el celular.
-No lo desplegamos en un servicio de nube de pago; el mismo `Dockerfile` serviría para hacerlo. *Privacidad:* las capturas muestran personas y ubicaciones, por lo que su uso requiere autorización de la empresa.
+El acceso está protegido con cuentas de usuario (correo y contraseña) gestionadas por Supabase Auth: la web y la app móvil tienen pantalla de registro e inicio de sesión, guardan solo el token y lo envían en cada petición; cada evento queda asociado al correo de quien lo reportó. Puede abrirse desde cualquier red mediante un túnel HTTPS, lo que permite usar cámara y GPS desde el celular.
+No lo desplegamos en un servicio de nube de pago; el mismo `Dockerfile` serviría para hacerlo. *Base de datos en la nube:* los eventos se guardan en una tabla `eventos` de Supabase (Postgres) y las capturas en su almacenamiento de objetos, con una clave publishable y políticas RLS; el mismo código usa SQLite local si no hay credenciales. *Privacidad:* las capturas muestran personas y ubicaciones, por lo que su uso requiere autorización de la empresa.
 
 // ------------------------------------------------------------------ 6
 = Resultados
@@ -285,7 +284,7 @@ En las imágenes, los recuadros blancos finos son las etiquetas del dataset; los
 // ------------------------------------------------------------------ 10
 = Integrantes
 #tabla(columns: (4.5cm, 1fr), [Integrante], [Qué hizo],
-  ..integrantes.map(i => ([#falta(i.at(0))], [#falta(i.at(1))])).flatten())
+  ..integrantes.map(i => ([#i.at(0)], [#i.at(1)])).flatten())
 
 #v(4pt)
 #text(8.5pt, fill: gray)[Referencias: Jocher, G. et al., Ultralytics YOLOv8 (https://github.com/ultralytics/ultralytics); Lin, T.-Y. et al., Microsoft COCO (2014); #cita_dataset.]

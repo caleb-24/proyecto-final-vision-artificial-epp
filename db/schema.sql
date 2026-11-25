@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS eventos (
     latitud REAL,                   -- ubicación real (GPS del celular), NULL si no hay
     longitud REAL,
     precision_m REAL,               -- precisión del GPS en metros
-    origen TEXT DEFAULT 'video'     -- 'video' (sistema.py) | 'app' (foto/video desde el celular)
+    origen TEXT DEFAULT 'video',    -- 'video' (sistema.py) | 'app' (foto/video desde el celular)
+    usuario TEXT                    -- correo del usuario autenticado que reportó el evento
 );
 CREATE INDEX IF NOT EXISTS idx_eventos_zona_momento ON eventos(zona, momento);

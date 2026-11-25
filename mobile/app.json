@@ -3,28 +3,54 @@
     "name": "Reporte EPP",
     "slug": "reporte-epp",
     "version": "1.0.0",
+    "runtimeVersion": "exposdk:58.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "ios": { "supportsTablet": true },
+    "ios": {
+      "supportsTablet": true
+    },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0f3d63",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/918f069e-af22-4368-ac25-9b535be65800"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "La app necesita tus fotos y videos para enviarlos al detector de EPP.",
+          "cameraPermission": "La app necesita la cámara para fotografiar o grabar la zona de obra.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "La app guarda la ubicación donde ocurre cada evento de EPP."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "918f069e-af22-4368-ac25-9b535be65800"
       }
     },
-    "web": { "favicon": "./assets/favicon.png" },
-    "plugins": [
-      ["expo-image-picker", {
-        "photosPermission": "La app necesita tus fotos y videos para enviarlos al detector de EPP.",
-        "cameraPermission": "La app necesita la cámara para fotografiar o grabar la zona de obra.",
-        "microphonePermission": false
-      }],
-      ["expo-location", {
-        "locationWhenInUsePermission": "La app guarda la ubicación donde ocurre cada evento de EPP."
-      }]
-    ]
+    "owner": "cjreyess-team"
   }
 }

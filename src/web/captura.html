@@ -52,14 +52,37 @@
   h2 { font-size:.95rem; margin:0 0 6px; }
   #zoom { position:fixed; inset:0; background:rgba(0,0,0,.9); display:none; align-items:center; justify-content:center; z-index:9; }
   #zoom img { max-width:100%; max-height:100%; }
+  header { position:relative; overflow:hidden; }
+  header::after { content:""; position:absolute; right:-70px; top:-90px; width:240px; height:240px; border-radius:50%; background:rgba(255,255,255,.07); }
+  header h1, header p { position:relative; z-index:1; }
+  .hero { background:linear-gradient(135deg,var(--ac),#0a4f99); color:#fff; border:0; }
+  .hero h2 { color:#fff; font-size:1.05rem; margin:0 0 5px; }
+  .hero p { color:#dceaff; font-size:.86rem; margin:0; }
+  .pasos { display:flex; gap:7px; flex-wrap:wrap; margin-top:13px; }
+  .paso { background:rgba(255,255,255,.16); border-radius:10px; padding:7px 10px; font-size:.76rem; font-weight:600; }
+  .card { transition:transform .15s ease, box-shadow .15s ease; }
+  .card:hover { box-shadow:0 6px 18px rgba(0,0,0,.07); }
+  .btn.primary { background:linear-gradient(135deg,var(--ac),#0a4f99); box-shadow:0 6px 16px rgba(15,111,209,.24); }
+  .btn:hover { filter:brightness(1.05); }
+  .stat b { font-size:1.75rem; letter-spacing:-.5px; }
+  #res .badge { font-size:1.1rem; padding:10px 18px; }
+  #res img { border:1px solid var(--bd); }
+  #salir { border-bottom:1px dotted currentColor; }
 </style>
 </head>
 <body>
 <header>
-  <h1>🦺 Reporte de EPP en obra</h1>
+  <h1>Reporte de EPP en obra</h1>
   <p>Foto o video → detección de casco y chaleco → evento con ubicación</p>
+  <p style="margin-top:6px;font-size:.78rem"><span id="usu"></span> <a href="#" id="salir" style="color:#fff;text-decoration:underline;display:none">Salir</a></p>
 </header>
 <main>
+  <div class="card hero">
+    <h2>Reporte rápido de EPP</h2>
+    <p>Toma una foto o un video: el sistema detecta casco, chaleco y persona, y guarda la evidencia con su ubicación.</p>
+    <div class="pasos"><span class="paso">1 · Permite cámara y GPS</span><span class="paso">2 · Toma la foto</span><span class="paso">3 · Revisa la alerta</span></div>
+  </div>
+
   <div class="card">
     <div class="row">
       <span class="chip"><i class="dot" id="dGps"></i><span id="tGps">Ubicación…</span></span>
@@ -71,12 +94,12 @@
   </div>
 
   <div class="card">
-    <label class="btn" for="cFoto">📷&nbsp;Tomar foto</label>
+    <label class="btn primary" for="cFoto">Tomar foto</label>
     <input id="cFoto" type="file" accept="image/*" capture="environment">
     <div class="two">
-      <label class="btn sec" for="cVideo">🎥&nbsp;Video</label>
+      <label class="btn sec" for="cVideo">Video</label>
       <input id="cVideo" type="file" accept="video/*" capture="environment">
-      <label class="btn sec" for="cGal">🖼️&nbsp;Galería</label>
+      <label class="btn sec" for="cGal">Galería</label>
       <input id="cGal" type="file" accept="image/*,video/*">
     </div>
     <p class="msg" style="margin-bottom:0">Videos de hasta 60 s. La ubicación se toma en el momento del envío.</p>
@@ -93,10 +116,18 @@
 </main>
 <div id="zoom"><img alt=""></div>
 
+<script src="/auth.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 const leer = (k, d) => { try { return localStorage.getItem(k) || d; } catch (e) { return d; } };
+function pintarSesion() {
+  $("usu").textContent = Sesion.email() ? Sesion.email() : "";
+  $("salir").style.display = Sesion.email() ? "inline" : "none";
+}
+document.addEventListener("sesion", pintarSesion);
+pintarSesion();
+$("salir").onclick = e => { e.preventDefault(); Sesion.salir(); };
 let pos = null;
 
 $("zona").value = leer("zona", "Zona 1");
@@ -149,12 +180,12 @@ async function enviar(archivo) {
   fd.append("archivo", archivo); fd.append("zona", zona);
   if (p) { fd.append("lat", p.lat); fd.append("lon", p.lon); fd.append("precision", p.prec); }
   try {
-    const resp = await fetch("/api/analizar", { method: "POST", body: fd });
+    const resp = await Sesion.api("/api/analizar", { method: "POST", body: fd });
     const j = await resp.json();
     if (!resp.ok) throw new Error(j.error || resp.status);
     const alerta = j.incumplimientos > 0, sinP = j.personas === 0;
     const color = alerta ? "var(--mal)" : sinP ? "var(--mut)" : "var(--ok)";
-    const titulo = alerta ? "⚠️ ALERTA: falta EPP" : sinP ? "Sin personas detectadas" : "✅ EPP completo";
+    const titulo = alerta ? "ALERTA: falta EPP" : sinP ? "Sin personas detectadas" : "EPP completo";
     let aviso = "";
     if (sinP && (j.cascos + j.chalecos) > 0) aviso = `Se detectaron ${j.cascos} casco(s) y ${j.chalecos} chaleco(s) pero ninguna persona, así que no se sabe a quién pertenecen. Pasa con personas muy juntas: toma la foto un poco más lejos.`;
     else if (sinP) aviso = "Acércate o mejora la luz. Si subes un video que ya trae recuadros dibujados, usa el original.";

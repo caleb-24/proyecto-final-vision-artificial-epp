@@ -40,14 +40,32 @@
   #zoom { position:fixed; inset:0; background:rgba(0,0,0,.88); display:none; align-items:center; justify-content:center; z-index:999; }
   #zoom img { max-width:96%; max-height:96%; border-radius:8px; }
   .vacio { text-align:center; padding:26px; color:var(--mut); }
+  header::after { content:""; position:absolute; right:0; top:0; bottom:0; width:280px; background:linear-gradient(90deg,transparent,rgba(255,255,255,.06)); pointer-events:none; }
+  header .in { position:relative; z-index:1; }
+  #usu { max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  button.b { transition:background .15s ease, transform .1s ease; }
+  button.b:hover { background:rgba(255,255,255,.32); }
+  button.b:active { transform:scale(.97); }
+  .k { position:relative; overflow:hidden; }
+  .k::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--ac); }
+  .k.mal::before { background:var(--mal); } .k.warn::before { background:var(--warn); }
+  .k b { font-size:1.95rem; letter-spacing:-1px; }
+  .bar { background:linear-gradient(180deg,#4a9cf0,var(--ac)); }
+  table tbody tr:hover { background:var(--chip); }
+  table tbody tr:nth-child(even) { background:rgba(127,127,127,.035); }
+  #tab img.mini { border:1px solid var(--bd); transition:transform .15s ease; }
+  #tab img.mini:hover { transform:scale(1.08); }
+  .card h2 { display:flex; align-items:center; gap:8px; }
 </style>
 </head>
 <body>
 <header><div class="in">
-  <div><h1>🦺 Panel de incumplimientos de EPP</h1><small id="act">Cargando…</small></div>
+  <div><h1>Panel de incumplimientos de EPP</h1><small id="act">Cargando…</small></div>
   <div style="display:flex;gap:8px;align-items:center">
     <select id="fz"><option value="">Todas las zonas</option></select>
-    <a href="/" style="color:#fff">📷 Capturar</a>
+    <span id="usu" style="color:#fff;font-size:.85rem"></span>
+    <button class="b" id="salir" style="display:none">Salir</button>
+    <a href="/" style="color:#fff">Capturar</a>
   </div>
 </div></header>
 <main>
@@ -63,8 +81,19 @@
 </main>
 <div id="zoom"><img alt=""></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/auth.js"></script>
 <script>
 const $ = id => document.getElementById(id);
+function pintarSesion() {
+  $("usu").textContent = Sesion.email() ? Sesion.email() : "";
+  $("salir").style.display = Sesion.email() ? "inline" : "none";
+}
+document.addEventListener("sesion", pintarSesion);
+document.addEventListener("sesion", e => {
+  if (!e.detail) { datos = { eventos: [], reporte: [] }; $("fz").innerHTML = '<option value="">Todas las zonas</option>'; pintar(); }
+});
+pintarSesion();
+$("salir").onclick = () => Sesion.salir();
 let mapa = null, capa = null, datos = { eventos: [], reporte: [] }, primera = true;
 const faltas = e => `${e.falta_casco ? '<span class="pill">sin casco</span>' : ""}${e.falta_chaleco ? '<span class="pill ch">sin chaleco</span>' : ""}`;
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -72,7 +101,8 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "
 function pintar() {
   const zona = $("fz").value;
   const ev = datos.eventos.filter(e => !zona || e.zona === zona);
-  const hoy = new Date().toISOString().slice(0, 10);
+  const f = new Date();
+  const hoy = f.getFullYear() + '-' + String(f.getMonth() + 1).padStart(2, '0') + '-' + String(f.getDate()).padStart(2, '0');
   const conGps = ev.filter(e => e.latitud != null);
   $("kpi").innerHTML =
     `<div class="k"><b>${ev.length}</b><span>eventos</span></div>` +
@@ -110,8 +140,11 @@ function pintar() {
 }
 
 async function cargar() {
+  if (!Sesion.token()) { $("act").textContent = "Inicia sesión para ver los eventos"; return; }
   try {
-    datos = await (await fetch("/api/eventos")).json();
+    const resp = await Sesion.api("/api/eventos?t=" + Date.now());
+    if (!resp.ok) return;
+    datos = await resp.json();
     const zonas = [...new Set(datos.eventos.map(e => e.zona))], sel = $("fz").value;
     $("fz").innerHTML = '<option value="">Todas las zonas</option>' + zonas.map(z => `<option ${z === sel ? "selected" : ""}>${esc(z)}</option>`).join("");
     pintar();

@@ -7,3 +7,4 @@ capturas/
 zona.json
 demo_anotada.mp4
 *.zip
+.env
